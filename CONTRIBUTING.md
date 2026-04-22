@@ -36,6 +36,16 @@ After editing: run `npm run build:lists && npm test`. The build script subtracts
 
 The graylist is narrowly defined: **email alias / forwarding services that let users mint unlimited revocable aliases** (SimpleLogin, DuckDuckGo Email Protection, Firefox Relay). Please do not add general privacy-focused providers (Proton, Tutanota) — those belong in the whitelist.
 
+## Adding a domain to the blacklist manually
+
+**Do not edit `data/blacklist.json` — it's auto-generated and your changes will be wiped on the next `npm run build:lists`.**
+
+If upstream sources haven't picked up a burner domain yet, add it to **`data/extra-blacklist.ts`** instead. The build script merges this list with upstream sources before the final blacklist is written.
+
+Whitelist precedence still applies: if you accidentally add a legitimate domain here, the whitelist will neutralize it.
+
+After editing: `npm run build:lists && npm test`.
+
 ## Adding a source to the blacklist fetcher
 
 Sources live in `scripts/build-lists.ts`. Each source needs:

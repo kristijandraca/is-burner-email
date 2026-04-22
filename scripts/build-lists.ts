@@ -1,6 +1,7 @@
 /**
  * Aggregates disposable-email domain lists from upstream sources,
- * merges them, subtracts whitelist + graylist, and writes data/blacklist.json.
+ * merges them with the manually-curated extra-blacklist, subtracts
+ * whitelist + graylist, and writes data/blacklist.json.
  *
  * Run with: npm run build:lists
  */
@@ -8,6 +9,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { EXTRA_BLACKLIST } from '../data/extra-blacklist.js';
 import { GRAYLIST } from '../data/graylist.js';
 import { WHITELIST } from '../data/whitelist.js';
 
@@ -128,12 +130,15 @@ async function main(): Promise<void> {
     throw new Error('all sources failed');
   }
 
+  const extra = normalize(EXTRA_BLACKLIST);
+  for (const d of extra) merged.add(d);
+  console.log(`  + ${'extra-blacklist'.padEnd(32)} ${extra.length} domains`);
+
   const whitelist = new Set(normalize(WHITELIST));
   const graylist = new Set(normalize(GRAYLIST));
 
-  // Whitelist always overrides. Graylist domains are managed separately
-  // (anonymous-signup services that are only treated as disposable in strict mode),
-  // so they should not appear in the blacklist.
+  // Whitelist always overrides — even extra-blacklist entries. Graylist domains
+  // live in the graylist, not the blacklist, so they're subtracted too.
   for (const d of whitelist) merged.delete(d);
   for (const d of graylist) merged.delete(d);
 
