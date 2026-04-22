@@ -1,0 +1,40 @@
+name: False positive (legitimate domain flagged as burner)
+description: A domain you believe is legitimate is being classified as disposable.
+title: "[false-positive] "
+labels: ["false-positive", "triage"]
+body:
+  - type: input
+    id: domain
+    attributes:
+      label: Domain
+      description: The full domain being mis-flagged.
+      placeholder: example.com
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Why is this domain legitimate?
+      description: Share evidence — it's a real company, a well-known webmail provider, a mail.com alias, etc.
+    validations:
+      required: true
+  - type: dropdown
+    id: list
+    attributes:
+      label: Where should it be classified?
+      options:
+        - whitelist (always legitimate)
+        - graylist (alias / forwarding service — block only in strict mode)
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Current behavior
+      description: Output of `burner <email>` or equivalent, if you have it.
+      render: shell
+  - type: input
+    id: version
+    attributes:
+      label: Package version
+      placeholder: 0.1.0

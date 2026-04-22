@@ -1,0 +1,29 @@
+name: False negative (burner not detected)
+description: A disposable / burner email domain is not being blocked.
+title: "[false-negative] "
+labels: ["false-negative", "triage"]
+body:
+  - type: input
+    id: domain
+    attributes:
+      label: Domain
+      placeholder: mailinator-clone.example
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Why is this a burner / disposable?
+      description: Link to the service, examples of its signup flow, or prior art (other lists that already flag it).
+    validations:
+      required: true
+  - type: input
+    id: upstream
+    attributes:
+      label: Which upstream source already lists this domain? (optional)
+      description: If one of our upstream sources already has it, we'll pull it in on the next refresh.
+  - type: input
+    id: version
+    attributes:
+      label: Package version
+      placeholder: 0.1.0
