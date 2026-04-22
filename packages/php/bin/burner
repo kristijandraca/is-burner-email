@@ -3,10 +3,15 @@
 
 declare(strict_types=1);
 
-// Resolve autoload whether installed as a dependency or running from the package checkout.
+// Resolve autoload whether installed as a dependency or running from the repo checkout.
+// Bin lives at packages/php/bin/burner; composer.json lives at the repo root.
 $autoloads = [
-    __DIR__ . '/../../../autoload.php',   // when installed as a dep of a larger project
-    __DIR__ . '/../vendor/autoload.php',  // when running from the package checkout
+    // Installed as a dependency: project/vendor/<vendor>/<pkg>/packages/php/bin/burner
+    // Target: project/vendor/autoload.php (5 directories up)
+    dirname(__DIR__, 5) . '/autoload.php',
+    // Running from the repo checkout: composer install creates vendor/ at the repo root
+    // Target: <repo>/vendor/autoload.php (3 directories up from packages/php/bin)
+    dirname(__DIR__, 3) . '/vendor/autoload.php',
 ];
 foreach ($autoloads as $path) {
     if (file_exists($path)) {

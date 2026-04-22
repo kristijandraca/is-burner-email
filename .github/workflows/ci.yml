@@ -78,8 +78,7 @@ jobs:
         with:
           php-version: ${{ matrix.php }}
       - name: Install dependencies
-        working-directory: packages/php
+        # composer.json lives at the repo root so Packagist can scan it.
         run: composer install --prefer-dist --no-interaction
       - name: Run phpunit
-        working-directory: packages/php
         run: composer test

@@ -34,7 +34,7 @@ npm run build:lists
 cd packages/js  && npm install && npm test
 cd packages/py  && python -m pip install -e '.[test]' && python -m pytest
 cd packages/go  && go test ./...
-cd packages/php && composer install && composer test
+composer install && composer test  # composer.json lives at the repo root (Packagist requirement)
 ```
 
 ## Useful scripts

@@ -1,9 +1,10 @@
 {
   "name": "kristijandraca/is-burner-email",
-  "description": "Fast, offline burner / disposable email detection with three-list (blacklist/whitelist/graylist) classification.",
+  "description": "Fast, offline burner / disposable email detection. Three lists (blacklist, whitelist, graylist), two modes (normal, strict), zero runtime deps. PHP port of is-burner-email.",
   "type": "library",
   "license": "MIT",
   "keywords": ["email", "burner", "disposable", "temporary", "validator", "offline"],
+  "homepage": "https://github.com/kristijandraca/is-burner-email",
   "authors": [
     { "name": "kristijandraca" }
   ],
@@ -15,15 +16,15 @@
   },
   "autoload": {
     "psr-4": {
-      "Kristijandraca\\IsBurnerEmail\\": "src/"
+      "Kristijandraca\\IsBurnerEmail\\": "packages/php/src/"
     }
   },
   "autoload-dev": {
     "psr-4": {
-      "Kristijandraca\\IsBurnerEmail\\Tests\\": "tests/"
+      "Kristijandraca\\IsBurnerEmail\\Tests\\": "packages/php/tests/"
     }
   },
-  "bin": ["bin/burner"],
+  "bin": ["packages/php/bin/burner"],
   "scripts": {
     "test": "phpunit"
   },
