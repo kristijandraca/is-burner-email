@@ -76,7 +76,7 @@ The **graylist** contains email alias / forwarding services (SimpleLogin, DuckDu
 The blacklist aggregates and deduplicates domains from:
 
 - [disposable-email-domains/disposable-email-domains](https://github.com/disposable-email-domains/disposable-email-domains)
-- [ivolo/disposable-email-domains](https://github.com/ivolo/disposable-email-domains)
+- [tompec/disposable-email-domains](https://github.com/tompec/disposable-email-domains)
 - [FGRibreau/mailchecker](https://github.com/FGRibreau/mailchecker)
 - [7c/fakefilter](https://github.com/7c/fakefilter)
 - [martenson/disposable-email-domains](https://github.com/martenson/disposable-email-domains)

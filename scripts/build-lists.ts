@@ -41,8 +41,8 @@ const SOURCES: Source[] = [
     parse: parseLines,
   },
   {
-    name: 'ivolo',
-    url: 'https://raw.githubusercontent.com/ivolo/disposable-email-domains/master/index.json',
+    name: 'tompec',
+    url: 'https://raw.githubusercontent.com/tompec/disposable-email-domains/main/index.json',
     parse: parseJsonArray,
   },
   {
