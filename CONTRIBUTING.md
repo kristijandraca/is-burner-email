@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for considering a contribution. This project is a monorepo that ships the same library to four language registries. Please read this page before opening a large PR.
+Thanks for considering a contribution. This project is a monorepo that ships the same library to five language registries. Please read this page before opening a large PR.
 
 ## Layout
 
@@ -11,12 +11,13 @@ Thanks for considering a contribution. This project is a monorepo that ships the
 │   ├── js/                             # npm package
 │   ├── py/                             # PyPI package
 │   ├── go/                             # Go module
-│   └── php/                            # Composer package
+│   ├── php/                            # Composer package
+│   └── csharp/                         # NuGet package
 ├── scripts/build-lists.ts              # fetches upstream sources, rebuilds blacklist, syncs to packages
 └── .github/workflows/                  # CI + release
 ```
 
-All four packages read the same `data/` files. `build-lists.ts` syncs copies into the language packages that need local data (Go for `go:embed`, PHP for runtime reads, Python for editable installs).
+All five packages read the same `data/` files. `build-lists.ts` syncs copies into the language packages that need local data (Go for `go:embed`, PHP for runtime reads, Python for editable installs, C# for `EmbeddedResource`).
 
 ## Quick start
 
@@ -31,9 +32,10 @@ npm install
 npm run build:lists
 
 # Then work in whichever language package you care about:
-cd packages/js  && npm install && npm test
-cd packages/py  && python -m pip install -e '.[test]' && python -m pytest
-cd packages/go  && go test ./...
+cd packages/js      && npm install && npm test
+cd packages/py      && python -m pip install -e '.[test]' && python -m pytest
+cd packages/go      && go test ./...
+cd packages/csharp  && dotnet test
 composer install && composer test  # composer.json lives at the repo root (Packagist requirement)
 ```
 
@@ -142,6 +144,7 @@ If you're releasing, not contributing: the mechanics live in [`.github/workflows
 | PyPI (Python) | ❌ not wired yet — first manual publish + trusted publisher registration needed |
 | Go | ⚠️ no-op publish — the `packages/go/vX.Y.Z` tag *is* the release; `go get @vX.Y.Z` works once pushed |
 | Packagist (PHP) | ❌ not wired yet — register repo on Packagist + enable GitHub webhook |
+| NuGet (C#) | ✅ automated via OIDC + Trusted Publishing (requires `NUGET_USER` repo secret with the nuget.org profile name) |
 
 Setup steps for wiring PyPI and Packagist live as TODO comments next to their stubs in [`release.yml`](./.github/workflows/release.yml) — search for `TODO:` in that file.
 

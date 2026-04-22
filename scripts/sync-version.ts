@@ -3,6 +3,8 @@
  * language package's version field:
  *   - packages/js/package.json
  *   - packages/py/pyproject.toml
+ *   - packages/csharp/src/IsBurnerEmail/IsBurnerEmail.csproj
+ *   - packages/csharp/cli/Burner.Cli/Burner.Cli.csproj
  *
  * Go and PHP have no version file — their versions come from git tags.
  *
@@ -46,6 +48,19 @@ function updatePyPyproject(version: string): boolean {
   return true;
 }
 
+function updateCsprojVersion(relPath: string, version: string): boolean {
+  const path = resolve(rootDir, relPath);
+  const body = readFileSync(path, 'utf8');
+  const pattern = /<Version>[^<]*<\/Version>/;
+  if (!pattern.test(body)) {
+    throw new Error(`Could not find <Version>...</Version> in ${path}`);
+  }
+  const next = body.replace(pattern, `<Version>${version}</Version>`);
+  if (next === body) return false;
+  writeFileSync(path, next);
+  return true;
+}
+
 function main(): void {
   const version = readVersion();
   console.error(`Syncing version ${version} into language packages...`);
@@ -55,6 +70,12 @@ function main(): void {
 
   const pyChanged = updatePyPyproject(version);
   console.error(`  ${pyChanged ? '✓ updated' : '· unchanged'}  packages/py/pyproject.toml`);
+
+  const csLibChanged = updateCsprojVersion('packages/csharp/src/IsBurnerEmail/IsBurnerEmail.csproj', version);
+  console.error(`  ${csLibChanged ? '✓ updated' : '· unchanged'}  packages/csharp/src/IsBurnerEmail/IsBurnerEmail.csproj`);
+
+  const csCliChanged = updateCsprojVersion('packages/csharp/cli/Burner.Cli/Burner.Cli.csproj', version);
+  console.error(`  ${csCliChanged ? '✓ updated' : '· unchanged'}  packages/csharp/cli/Burner.Cli/Burner.Cli.csproj`);
 
   console.error('\nGo and PHP have no version files — their versions come from git tags.');
 }

@@ -82,3 +82,23 @@ jobs:
         run: composer install --prefer-dist --no-interaction
       - name: Run phpunit
         run: composer test
+
+  test-csharp:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        dotnet: ['8.0.x']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ matrix.dotnet }}
+      - name: Restore
+        working-directory: packages/csharp
+        run: dotnet restore
+      - name: Test
+        working-directory: packages/csharp
+        run: dotnet test --no-restore --verbosity minimal
+      - name: Build CLI
+        working-directory: packages/csharp
+        run: dotnet build cli/Burner.Cli/Burner.Cli.csproj --no-restore --configuration Release

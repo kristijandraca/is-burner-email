@@ -58,7 +58,7 @@ jobs:
       - name: Detect data changes
         id: data
         run: |
-          if git diff --quiet data/ packages/go/data/ packages/php/data/ packages/py/src/is_burner_email/data/; then
+          if git diff --quiet data/ packages/go/data/ packages/php/data/ packages/py/src/is_burner_email/data/ packages/csharp/src/IsBurnerEmail/data/; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "No data changes detected."
           else
@@ -115,7 +115,8 @@ jobs:
                   data/ \
                   packages/go/data/ \
                   packages/php/data/ \
-                  packages/py/src/is_burner_email/data/
+                  packages/py/src/is_burner_email/data/ \
+                  packages/csharp/src/IsBurnerEmail/data/
           git commit -m "chore(release): v${{ steps.bumped.outputs.version }}${{ steps.decide.outputs.suffix }}"
 
       - name: Create multi-language tags
@@ -127,6 +128,7 @@ jobs:
           git tag -a "py/$v"                  -m "Python release $v"
           git tag -a "packages/go/$v"         -m "Go release $v"
           git tag -a "php/$v"                 -m "PHP release $v"
+          git tag -a "csharp/$v"              -m "C# release $v"
 
       - name: Publish JS to npm via OIDC
         if: steps.decide.outputs.release == 'true'
@@ -152,6 +154,40 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: packages/py/dist
+
+      - name: Set up .NET
+        if: steps.decide.outputs.release == 'true'
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Pack C# library and CLI tool
+        if: steps.decide.outputs.release == 'true'
+        working-directory: packages/csharp
+        run: |
+          rm -rf artifacts
+          dotnet pack src/IsBurnerEmail/IsBurnerEmail.csproj --configuration Release --output artifacts
+          dotnet pack cli/Burner.Cli/Burner.Cli.csproj       --configuration Release --output artifacts
+
+      # Requests a short-lived NuGet API key via OIDC. The Trusted Publishing
+      # policy on nuget.org is pinned to this workflow file (release.yml) and
+      # owner/repo, so no long-lived secret is stored in the repo. NUGET_USER
+      # must match the nuget.org profile name that owns the policy.
+      - name: NuGet login (OIDC → short-lived API key)
+        if: steps.decide.outputs.release == 'true'
+        id: nuget_login
+        uses: NuGet/login@v1
+        with:
+          user: ${{ secrets.NUGET_USER }}
+
+      - name: Publish to NuGet
+        if: steps.decide.outputs.release == 'true'
+        working-directory: packages/csharp
+        run: |
+          dotnet nuget push "artifacts/*.nupkg" \
+            --api-key ${{ steps.nuget_login.outputs.NUGET_API_KEY }} \
+            --source https://api.nuget.org/v3/index.json \
+            --skip-duplicate
 
       - name: Push commit and tags
         if: steps.decide.outputs.release == 'true'

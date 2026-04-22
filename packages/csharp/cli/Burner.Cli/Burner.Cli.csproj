@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <RollForward>Major</RollForward>
+    <RootNamespace>Kristijandraca.IsBurnerEmail.Cli</RootNamespace>
+    <AssemblyName>burner</AssemblyName>
+
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>burner</ToolCommandName>
+    <PackageId>Kristijandraca.IsBurnerEmail.Cli</PackageId>
+    <Version>1.1.0</Version>
+    <Authors>kristijandraca</Authors>
+    <Description>CLI for Kristijandraca.IsBurnerEmail — burner / disposable email detection.</Description>
+    <PackageTags>email;burner;disposable;temporary;validator;offline;cli</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/kristijandraca/is-burner-email</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/kristijandraca/is-burner-email</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/IsBurnerEmail/IsBurnerEmail.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="../../README.md" Pack="true" PackagePath="/" />
+  </ItemGroup>
+
+</Project>
