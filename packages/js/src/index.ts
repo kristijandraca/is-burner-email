@@ -1,6 +1,6 @@
-import blacklistData from '../data/blacklist.json';
-import { GRAYLIST } from '../data/graylist.js';
-import { WHITELIST } from '../data/whitelist.js';
+import blacklistText from '../../../data/blacklist.txt';
+import graylistText from '../../../data/graylist.txt';
+import whitelistText from '../../../data/whitelist.txt';
 
 export type Mode = 'normal' | 'strict';
 export type ListName = 'blacklist' | 'whitelist' | 'graylist';
@@ -22,9 +22,19 @@ export interface CheckResult {
     | 'unknown';
 }
 
-const blacklist: Set<string> = new Set(blacklistData as string[]);
-const whitelist: Set<string> = new Set(WHITELIST);
-const graylist: Set<string> = new Set(GRAYLIST);
+function parseTxt(text: string): string[] {
+  const out: string[] = [];
+  for (const line of text.split(/\r?\n/)) {
+    const t = line.trim();
+    if (!t || t.startsWith('#')) continue;
+    out.push(t.toLowerCase());
+  }
+  return out;
+}
+
+const blacklist: Set<string> = new Set(parseTxt(blacklistText));
+const whitelist: Set<string> = new Set(parseTxt(whitelistText));
+const graylist: Set<string> = new Set(parseTxt(graylistText));
 
 const runtimeBlacklist = new Set<string>();
 const runtimeWhitelist = new Set<string>();

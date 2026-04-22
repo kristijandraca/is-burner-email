@@ -14,10 +14,5 @@ export default defineConfig({
   target: 'node20',
   splitting: false,
   shims: false,
-  banner: ({ format }) => {
-    return { js: '' };
-  },
-  esbuildOptions(options) {
-    options.loader = { ...options.loader, '.json': 'json' };
-  },
+  loader: { '.txt': 'text' },
 });
