@@ -9,6 +9,22 @@
 // Keep entries sorted alphabetically within each group. Include a short
 // comment above each entry or group explaining why it's blacklisted.
 export const EXTRA_BLACKLIST: readonly string[] = [
-  // Add domains here, e.g.:
-  // 'example-burner-service.com',
+  // dark2web.com (disposable / burner service — rotating alias domains)
+  'accommodate.top',
+  'atlant.link',
+  'cfo.futbol',
+  'competition.tel',
+  'creditka.fans',
+  'dark2web.art',
+  'demand.pictures',
+  'diversify.re',
+  'grand-me.club',
+  'lary-lcc.click',
+  'lcc-company.one',
+  'lican.in',
+  'ligue-games.art',
+  'ministre.rocks',
+  'miranda.pictures',
+  'start-up.observer',
+  'wery-well.net',
 ];
