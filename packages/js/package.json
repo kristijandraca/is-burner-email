@@ -1,6 +1,6 @@
 {
   "name": "is-burner-email",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "description": "Fast, offline burner / disposable email detection. Three lists (blacklist, whitelist, graylist), two modes (normal, strict), zero runtime deps.",
   "type": "module",
   "main": "./dist/index.cjs",
