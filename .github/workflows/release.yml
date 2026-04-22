@@ -1,0 +1,112 @@
+name: Release
+
+# Single publish workflow — npm Trusted Publishing allows only one trusted
+# publisher per package, so both automated (cron) and manual (dispatch) releases
+# must live here.
+#
+# Behavior:
+#   - schedule: rebuild lists, publish a patch only if data changed
+#   - workflow_dispatch: always publish with the chosen bump, picking up any
+#     data changes along the way
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: 'Version bump type'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          registry-url: 'https://registry.npmjs.org'
+          cache: npm
+
+      - run: npm ci
+
+      - name: Rebuild lists from upstream sources
+        run: npm run build:lists
+
+      - name: Detect data changes
+        id: data
+        run: |
+          if git diff --quiet data/; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No data changes detected."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "Data changes detected."
+          fi
+
+      - name: Decide release parameters
+        id: decide
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "release=true" >> "$GITHUB_OUTPUT"
+            echo "bump=${{ inputs.bump }}" >> "$GITHUB_OUTPUT"
+            echo "message=chore(release): v%s" >> "$GITHUB_OUTPUT"
+            echo "Manual dispatch — will release with ${{ inputs.bump }} bump."
+          elif [ "${{ steps.data.outputs.changed }}" = "true" ]; then
+            echo "release=true" >> "$GITHUB_OUTPUT"
+            echo "bump=patch" >> "$GITHUB_OUTPUT"
+            echo "message=chore(release): v%s — refresh disposable domain lists" >> "$GITHUB_OUTPUT"
+            echo "Cron with data changes — will release patch."
+          else
+            echo "release=false" >> "$GITHUB_OUTPUT"
+            echo "Cron with no data changes — nothing to release."
+          fi
+
+      - name: Typecheck
+        if: steps.decide.outputs.release == 'true'
+        run: npm run typecheck
+
+      - name: Test
+        if: steps.decide.outputs.release == 'true'
+        run: npm test
+
+      - name: Build
+        if: steps.decide.outputs.release == 'true'
+        run: npm run build
+
+      - name: Configure git identity
+        if: steps.decide.outputs.release == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Stage data changes
+        if: steps.decide.outputs.release == 'true' && steps.data.outputs.changed == 'true'
+        run: git add data/
+
+      - name: Bump version and commit
+        if: steps.decide.outputs.release == 'true'
+        run: npm version ${{ steps.decide.outputs.bump }} -m "${{ steps.decide.outputs.message }}"
+
+      - name: Publish to npm via OIDC
+        if: steps.decide.outputs.release == 'true'
+        run: npm publish --access public --provenance
+
+      - name: Push commit and tag
+        if: steps.decide.outputs.release == 'true'
+        run: git push --follow-tags

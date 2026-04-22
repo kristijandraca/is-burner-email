@@ -28,7 +28,7 @@ You can expect:
 **In scope**
 
 - The published npm package `is-burner-email`
-- The CI/CD workflows that produce the published artifacts (`update-lists.yml`, `publish.yml`)
+- The CI/CD workflow that produces the published artifacts (`release.yml`)
 
 **Out of scope** — please use a regular issue, not a security advisory:
 
