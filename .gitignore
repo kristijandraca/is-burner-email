@@ -5,6 +5,25 @@ coverage
 *.tgz
 *.tsbuildinfo
 .eslintcache
+
+# Python
+__pycache__
+*.egg-info
+.pytest_cache
+.venv
+venv
+
+# PHP
+vendor
+composer.lock
+.phpunit.cache
+.phpunit.result.cache
+
+# Go
+*.test
+*.out
+
+# OS + editors + secrets
 .DS_Store
 Thumbs.db
 .env

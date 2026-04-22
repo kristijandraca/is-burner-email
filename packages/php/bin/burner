@@ -1,0 +1,98 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+// Resolve autoload whether installed as a dependency or running from the package checkout.
+$autoloads = [
+    __DIR__ . '/../../../autoload.php',   // when installed as a dep of a larger project
+    __DIR__ . '/../vendor/autoload.php',  // when running from the package checkout
+];
+foreach ($autoloads as $path) {
+    if (file_exists($path)) {
+        require $path;
+        break;
+    }
+}
+
+use Kristijandraca\IsBurnerEmail\IsBurnerEmail;
+
+const HELP_TEXT = <<<EOT
+burner — burner / disposable email detection
+
+Usage:
+  burner <email> [--strict] [--json]
+  burner --stats
+  burner --help
+
+Options:
+  --strict    Use strict mode (graylisted domains are treated as disposable)
+  --json      Output full check result as JSON
+  --stats     Print the sizes of the bundled lists
+  -h, --help  Show this help
+
+Exit codes:
+  0  not a burner
+  1  burner
+  2  invalid input / error
+
+EOT;
+
+$strict = false;
+$asJson = false;
+$stats = false;
+$help = false;
+$email = null;
+
+foreach (array_slice($argv, 1) as $arg) {
+    if ($arg === '-h' || $arg === '--help') {
+        $help = true;
+    } elseif ($arg === '--strict') {
+        $strict = true;
+    } elseif ($arg === '--json') {
+        $asJson = true;
+    } elseif ($arg === '--stats') {
+        $stats = true;
+    } elseif ($arg !== '' && $arg[0] !== '-') {
+        $email = $arg;
+    }
+}
+
+if ($help) {
+    fwrite(STDOUT, HELP_TEXT);
+    exit(0);
+}
+
+if ($stats) {
+    $sizes = IsBurnerEmail::getListSizes();
+    if ($asJson) {
+        fwrite(STDOUT, json_encode($sizes) . PHP_EOL);
+    } else {
+        fwrite(STDOUT, sprintf("blacklist: %d\nwhitelist: %d\ngraylist:  %d\n", $sizes['blacklist'], $sizes['whitelist'], $sizes['graylist']));
+    }
+    exit(0);
+}
+
+if ($email === null) {
+    fwrite(STDERR, "Error: missing email argument\n\n");
+    fwrite(STDERR, HELP_TEXT);
+    exit(2);
+}
+
+$mode = $strict ? IsBurnerEmail::MODE_STRICT : IsBurnerEmail::MODE_NORMAL;
+$result = IsBurnerEmail::check($email, $mode);
+
+if ($result['reason'] === 'invalid-email') {
+    fwrite(STDERR, "Error: invalid email: {$email}\n");
+    exit(2);
+}
+
+if ($asJson) {
+    fwrite(STDOUT, json_encode(array_merge($result, ['mode' => $mode])) . PHP_EOL);
+} else {
+    $label = $result['burner'] ? 'BURNER' : 'OK';
+    $listInfo = $result['list'] ? " ({$result['list']})" : '';
+    fwrite(STDOUT, "{$label}{$listInfo}: {$result['domain']} [{$result['reason']}]\n");
+}
+
+exit($result['burner'] ? 1 : 0);

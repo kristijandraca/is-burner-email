@@ -1,13 +1,16 @@
 name: Release
 
-# Single publish workflow — npm Trusted Publishing allows only one trusted
-# publisher per package, so both automated (cron) and manual (dispatch) releases
-# must live here.
+# Coordinated release across all four language packages. One shared version
+# lives in /VERSION and is mirrored into each package file. Tags are pushed
+# per-language so every registry picks up its own trigger.
+#
+# Publishes JS to npm and Python to PyPI, both via Trusted Publishing (OIDC).
+# Go is tag-driven — pushing packages/go/vX.Y.Z below is the release.
+# PHP: see the Packagist TODO below — needs a one-time webhook registration.
 #
 # Behavior:
-#   - schedule: rebuild lists, publish a patch only if data changed
-#   - workflow_dispatch: always publish with the chosen bump, picking up any
-#     data changes along the way
+#   - schedule: rebuild lists, release a patch across all languages if data changed
+#   - workflow_dispatch: always release with the chosen bump
 
 on:
   schedule:
@@ -41,9 +44,13 @@ jobs:
         with:
           node-version: '24'
           registry-url: 'https://registry.npmjs.org'
-          cache: npm
 
-      - run: npm ci
+      - name: Install root tooling
+        run: npm ci
+
+      - name: Install JS package deps
+        working-directory: packages/js
+        run: npm ci
 
       - name: Rebuild lists from upstream sources
         run: npm run build:lists
@@ -51,7 +58,7 @@ jobs:
       - name: Detect data changes
         id: data
         run: |
-          if git diff --quiet data/; then
+          if git diff --quiet data/ packages/go/data/ packages/php/data/ packages/py/src/is_burner_email/data/; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "No data changes detected."
           else
@@ -65,29 +72,33 @@ jobs:
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "release=true" >> "$GITHUB_OUTPUT"
             echo "bump=${{ inputs.bump }}" >> "$GITHUB_OUTPUT"
-            echo "message=chore(release): v%s" >> "$GITHUB_OUTPUT"
+            echo "suffix=" >> "$GITHUB_OUTPUT"
             echo "Manual dispatch — will release with ${{ inputs.bump }} bump."
           elif [ "${{ steps.data.outputs.changed }}" = "true" ]; then
             echo "release=true" >> "$GITHUB_OUTPUT"
             echo "bump=patch" >> "$GITHUB_OUTPUT"
-            echo "message=chore(release): v%s — refresh disposable domain lists" >> "$GITHUB_OUTPUT"
+            echo "suffix= — refresh disposable domain lists" >> "$GITHUB_OUTPUT"
             echo "Cron with data changes — will release patch."
           else
             echo "release=false" >> "$GITHUB_OUTPUT"
             echo "Cron with no data changes — nothing to release."
           fi
 
-      - name: Typecheck
+      - name: Bump shared version and sync into packages
         if: steps.decide.outputs.release == 'true'
-        run: npm run typecheck
+        id: bumped
+        run: |
+          new_version=$(npx tsx scripts/bump-version.ts ${{ steps.decide.outputs.bump }})
+          echo "version=$new_version" >> "$GITHUB_OUTPUT"
+          echo "New version: $new_version"
 
-      - name: Test
+      - name: Typecheck, test, build (JS)
         if: steps.decide.outputs.release == 'true'
-        run: npm test
-
-      - name: Build
-        if: steps.decide.outputs.release == 'true'
-        run: npm run build
+        working-directory: packages/js
+        run: |
+          npm run typecheck
+          npm test
+          npm run build
 
       - name: Configure git identity
         if: steps.decide.outputs.release == 'true'
@@ -95,18 +106,53 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-      - name: Stage data changes
-        if: steps.decide.outputs.release == 'true' && steps.data.outputs.changed == 'true'
-        run: git add data/
-
-      - name: Bump version and commit
+      - name: Commit version bump and any data changes
         if: steps.decide.outputs.release == 'true'
-        run: npm version ${{ steps.decide.outputs.bump }} -m "${{ steps.decide.outputs.message }}"
+        run: |
+          git add VERSION \
+                  packages/js/package.json \
+                  packages/py/pyproject.toml \
+                  data/ \
+                  packages/go/data/ \
+                  packages/php/data/ \
+                  packages/py/src/is_burner_email/data/
+          git commit -m "chore(release): v${{ steps.bumped.outputs.version }}${{ steps.decide.outputs.suffix }}"
 
-      - name: Publish to npm via OIDC
+      - name: Create multi-language tags
         if: steps.decide.outputs.release == 'true'
+        run: |
+          v='v${{ steps.bumped.outputs.version }}'
+          git tag -a "$v"                     -m "Release $v"
+          git tag -a "js/$v"                  -m "JS release $v"
+          git tag -a "py/$v"                  -m "Python release $v"
+          git tag -a "packages/go/$v"         -m "Go release $v"
+          git tag -a "php/$v"                 -m "PHP release $v"
+
+      - name: Publish JS to npm via OIDC
+        if: steps.decide.outputs.release == 'true'
+        working-directory: packages/js
         run: npm publish --access public --provenance
 
-      - name: Push commit and tag
+      - name: Set up Python
+        if: steps.decide.outputs.release == 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Build Python package
+        if: steps.decide.outputs.release == 'true'
+        working-directory: packages/py
+        run: |
+          rm -rf dist
+          python -m pip install --upgrade build
+          python -m build
+
+      - name: Publish Python to PyPI via OIDC
+        if: steps.decide.outputs.release == 'true'
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: packages/py/dist
+
+      - name: Push commit and tags
         if: steps.decide.outputs.release == 'true'
         run: git push --follow-tags

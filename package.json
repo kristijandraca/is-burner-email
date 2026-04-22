@@ -1,66 +1,19 @@
 {
-  "name": "is-burner-email",
-  "version": "1.0.2",
-  "description": "Fast, offline burner / disposable email detection. Three lists (blacklist, whitelist, graylist), two modes (normal, strict), zero runtime deps.",
+  "name": "is-burner-email-tooling",
+  "private": true,
+  "description": "Monorepo tooling for is-burner-email. Runs the shared data pipeline (scripts/build-lists.ts). Language packages live in packages/<lang>/ and each has its own install and test flow.",
   "type": "module",
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
-    }
-  },
-  "bin": {
-    "burner": "./dist/cli.js"
-  },
-  "files": [
-    "dist",
-    "README.md",
-    "LICENSE"
-  ],
   "scripts": {
-    "build": "tsup",
     "build:lists": "tsx scripts/build-lists.ts",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "typecheck": "tsc --noEmit",
-    "prepublishOnly": "npm run build"
+    "version:sync": "tsx scripts/sync-version.ts",
+    "version:bump": "tsx scripts/bump-version.ts"
   },
-  "keywords": [
-    "burner",
-    "burner-email",
-    "disposable",
-    "disposable-email",
-    "temporary",
-    "throwaway",
-    "validator",
-    "blacklist",
-    "whitelist",
-    "graylist",
-    "offline",
-    "cli"
-  ],
-  "author": "kristijandraca",
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/kristijandraca/is-burner-email.git"
-  },
-  "bugs": {
-    "url": "https://github.com/kristijandraca/is-burner-email/issues"
-  },
-  "homepage": "https://github.com/kristijandraca/is-burner-email#readme",
   "engines": {
     "node": ">=20"
   },
   "devDependencies": {
     "@types/node": "^20.12.0",
-    "tsup": "^8.0.2",
     "tsx": "^4.7.1",
-    "typescript": "^5.4.0",
-    "vitest": "^4.1.5"
+    "typescript": "^5.4.0"
   }
 }

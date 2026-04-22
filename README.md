@@ -1,75 +1,57 @@
 # is-burner-email
 
-Fast, offline detection of burner / disposable emails.
+Fast, offline burner / disposable email detection. Same three-list model (`blacklist` / `whitelist` / `graylist`) and two modes (`normal` / `strict`) across four languages.
 
-- **Offline.** Domain lists are bundled at build time. No network calls at runtime.
-- **Zero runtime dependencies.**
-- **Three lists.** `blacklist` (burners), `whitelist` (always allowed), `graylist` (email alias / forwarding services like SimpleLogin, DuckDuckGo, Firefox Relay — blocked only in strict mode).
-- **TypeScript.** Ships both ESM and CJS with types. Node 20+.
-- **Auto-updated weekly** via GitHub Actions, aggregating multiple upstream sources.
+## Packages
 
-## Install
+| Language | Registry | Install | Docs |
+|---|---|---|---|
+| **JavaScript / TypeScript** | [npm](https://www.npmjs.com/package/is-burner-email) | `npm install is-burner-email` | [`packages/js/`](./packages/js) |
+| **Python** | [PyPI](https://pypi.org/project/is-burner-email/) | `pip install is-burner-email` | [`packages/py/`](./packages/py) |
+| **Go** | go.dev | `go get github.com/kristijandraca/is-burner-email/packages/go` | [`packages/go/`](./packages/go) |
+| **PHP** | [Packagist](https://packagist.org/packages/kristijandraca/is-burner-email) | `composer require kristijandraca/is-burner-email` | [`packages/php/`](./packages/php) |
 
-```sh
-npm install is-burner-email
+Every package ships the same bundled domain data and exposes the same API shape.
+
+## Shared features
+
+- **Offline.** Domain lists are bundled at package-build time. No network calls at runtime.
+- **Zero runtime dependencies** in every language.
+- **Three lists.**
+  - `blacklist` — burners (always blocked)
+  - `whitelist` — always allowed; overrides everything else
+  - `graylist` — email alias / forwarding services (SimpleLogin, DuckDuckGo, Firefox Relay); blocked only in strict mode
+- **Two modes.** `normal` (blacklist only) or `strict` (blacklist + graylist)
+- **CLI in every language** — `burner <email>` with the same flags and exit codes
+- **Auto-updated weekly** — a cron refreshes the aggregated blacklist from upstream sources and publishes a patch version when anything changed
+
+## Data model
+
+All four packages read the same canonical files in [`data/`](./data):
+
+| File | Contents | Edited by |
+|---|---|---|
+| `blacklist.txt` | Aggregated from 5 upstream sources + `extra-blacklist.txt`, minus `whitelist` and `graylist` | auto-generated |
+| `whitelist.txt` | Curated "always allow" list (major providers, companies, IANA test domains) | humans |
+| `graylist.txt` | Curated alias / forwarding services | humans |
+| `extra-blacklist.txt` | Manually-curated additions to the blacklist | humans |
+
+`scripts/build-lists.ts` fetches, merges, and syncs these files into the language packages that need local copies (Go for `go:embed`, PHP for runtime reads, Python for editable installs). The JS package reads root `data/` directly via tsup's text loader.
+
+## Monorepo layout
+
 ```
-
-## Usage
-
-```ts
-import { isBurner, check } from 'is-burner-email';
-
-isBurner('user@mailinator.com');                  // true
-isBurner('user@gmail.com');                       // false
-isBurner('user@duck.com');                        // false (normal mode)
-isBurner('user@duck.com', { mode: 'strict' });    // true
-
-check('user@duck.com', { mode: 'strict' });
-// {
-//   burner: true,
-//   domain: 'duck.com',
-//   list: 'graylist',
-//   reason: 'graylisted-strict'
-// }
+/
+├── data/                               # Canonical data (single source of truth)
+├── packages/
+│   ├── js/                             # npm package
+│   ├── py/                             # PyPI package
+│   ├── go/                             # Go module
+│   └── php/                            # Composer package
+├── scripts/
+│   └── build-lists.ts                  # Fetches sources, rebuilds blacklist, syncs copies
+└── .github/workflows/                  # CI + release pipelines
 ```
-
-### Runtime overrides
-
-```ts
-import { addToBlacklist, addToWhitelist } from 'is-burner-email';
-
-addToBlacklist('badactor.example');
-addToWhitelist('our-corporate-domain.example');
-```
-
-Whitelist always wins over blacklist.
-
-## CLI
-
-The package installs a `burner` command:
-
-```sh
-npx is-burner-email user@mailinator.com
-# or, after global install (`npm i -g is-burner-email`):
-burner user@mailinator.com
-# BURNER (blacklist): mailinator.com [blacklisted]
-
-burner user@duck.com --strict --json
-# {"burner":true,"domain":"duck.com","list":"graylist","reason":"graylisted-strict","mode":"strict"}
-
-burner --stats
-```
-
-Exit codes: `0` clean, `1` burner, `2` invalid input.
-
-## Modes
-
-| Mode     | blacklist | graylist | whitelist |
-| -------- | --------- | -------- | --------- |
-| `normal` | blocked   | allowed  | allowed   |
-| `strict` | blocked   | blocked  | allowed   |
-
-The **graylist** contains email alias / forwarding services (SimpleLogin, DuckDuckGo Email Protection, Firefox Relay) — services that let users mint unlimited revocable aliases. Treat these as burners only if your use case requires strong user accountability.
 
 ## Sources
 
@@ -81,11 +63,9 @@ The blacklist aggregates and deduplicates domains from:
 - [7c/fakefilter](https://github.com/7c/fakefilter)
 - [martenson/disposable-email-domains](https://github.com/martenson/disposable-email-domains)
 
-Whitelist and graylist are manually curated in [`data/`](./data).
-
 ## Community
 
-- [`CONTRIBUTING.md`](./CONTRIBUTING.md) — dev setup, how to add domains, PR process
+- [`CONTRIBUTING.md`](./CONTRIBUTING.md) — dev setup, adding domains, PR process
 - [`SECURITY.md`](./SECURITY.md) — reporting vulnerabilities
 - [`ACKNOWLEDGMENTS.md`](./ACKNOWLEDGMENTS.md) — upstream list credits
 
