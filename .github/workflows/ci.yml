@@ -102,3 +102,22 @@ jobs:
       - name: Build CLI
         working-directory: packages/csharp
         run: dotnet build cli/Burner.Cli/Burner.Cli.csproj --no-restore --configuration Release
+
+  test-kotlin:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        java: ['17', '21']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.java }}
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Test
+        working-directory: packages/kotlin
+        run: ./gradlew test --no-daemon
+      - name: Build CLI distribution
+        working-directory: packages/kotlin
+        run: ./gradlew :cli:installDist --no-daemon

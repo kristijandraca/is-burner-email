@@ -1,6 +1,6 @@
 # is-burner-email
 
-Fast, offline burner / disposable email detection. Same three-list model (`blacklist` / `whitelist` / `graylist`) and two modes (`normal` / `strict`) across five languages.
+Fast, offline burner / disposable email detection. Same three-list model (`blacklist` / `whitelist` / `graylist`) and two modes (`normal` / `strict`) across six languages.
 
 ## Packages
 
@@ -11,6 +11,7 @@ Fast, offline burner / disposable email detection. Same three-list model (`black
 | **Go** | go.dev | `go get github.com/kristijandraca/is-burner-email/packages/go` | [`packages/go/`](./packages/go) |
 | **PHP** | [Packagist](https://packagist.org/packages/kristijandraca/is-burner-email) | `composer require kristijandraca/is-burner-email` | [`packages/php/`](./packages/php) |
 | **C# / .NET** | [NuGet](https://www.nuget.org/packages/Kristijandraca.IsBurnerEmail) | `dotnet add package Kristijandraca.IsBurnerEmail` | [`packages/csharp/`](./packages/csharp) |
+| **Kotlin / JVM** | [Maven Central](https://central.sonatype.com/artifact/io.github.kristijandraca/is-burner-email) | `implementation("io.github.kristijandraca:is-burner-email:1.1.0")` | [`packages/kotlin/`](./packages/kotlin) |
 
 Every package ships the same bundled domain data and exposes the same API shape.
 
@@ -37,7 +38,7 @@ All four packages read the same canonical files in [`data/`](./data):
 | `graylist.txt` | Curated alias / forwarding services | humans |
 | `extra-blacklist.txt` | Manually-curated additions to the blacklist | humans |
 
-`scripts/build-lists.ts` fetches, merges, and syncs these files into the language packages that need local copies (Go for `go:embed`, PHP for runtime reads, Python for editable installs, C# for `EmbeddedResource`). The JS package reads root `data/` directly via tsup's text loader.
+`scripts/build-lists.ts` fetches, merges, and syncs these files into the language packages that need local copies (Go for `go:embed`, PHP for runtime reads, Python for editable installs, C# for `EmbeddedResource`, Kotlin for JVM classpath resources). The JS package reads root `data/` directly via tsup's text loader.
 
 ## Monorepo layout
 
@@ -49,7 +50,8 @@ All four packages read the same canonical files in [`data/`](./data):
 │   ├── py/                             # PyPI package
 │   ├── go/                             # Go module
 │   ├── php/                            # Composer package
-│   └── csharp/                         # NuGet package
+│   ├── csharp/                         # NuGet package
+│   └── kotlin/                         # Maven Central package
 ├── scripts/
 │   └── build-lists.ts                  # Fetches sources, rebuilds blacklist, syncs copies
 └── .github/workflows/                  # CI + release pipelines

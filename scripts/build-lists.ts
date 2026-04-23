@@ -120,12 +120,14 @@ function readTxtList(path: string): string[] {
 //   - Python: editable installs need files under the source tree (wheels use
 //     hatchling's force-include, which doesn't need this copy)
 //   - C#: EmbeddedResource requires files under the csproj dir
+//   - Kotlin: JVM classpath resources must live under src/main/resources
 // The JS package reads root data/ directly via tsup's text loader.
 const SYNC_TARGETS = [
   resolve(rootDir, 'packages/go/data'),
   resolve(rootDir, 'packages/php/data'),
   resolve(rootDir, 'packages/py/src/is_burner_email/data'),
   resolve(rootDir, 'packages/csharp/src/IsBurnerEmail/data'),
+  resolve(rootDir, 'packages/kotlin/lib/src/main/resources'),
 ];
 
 function syncDataDir(): void {

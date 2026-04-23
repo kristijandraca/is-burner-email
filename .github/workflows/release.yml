@@ -58,7 +58,7 @@ jobs:
       - name: Detect data changes
         id: data
         run: |
-          if git diff --quiet data/ packages/go/data/ packages/php/data/ packages/py/src/is_burner_email/data/ packages/csharp/src/IsBurnerEmail/data/; then
+          if git diff --quiet data/ packages/go/data/ packages/php/data/ packages/py/src/is_burner_email/data/ packages/csharp/src/IsBurnerEmail/data/ packages/kotlin/lib/src/main/resources/; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "No data changes detected."
           else
@@ -112,11 +112,15 @@ jobs:
           git add VERSION \
                   packages/js/package.json \
                   packages/py/pyproject.toml \
+                  packages/csharp/src/IsBurnerEmail/IsBurnerEmail.csproj \
+                  packages/csharp/cli/Burner.Cli/Burner.Cli.csproj \
+                  packages/kotlin/build.gradle.kts \
                   data/ \
                   packages/go/data/ \
                   packages/php/data/ \
                   packages/py/src/is_burner_email/data/ \
-                  packages/csharp/src/IsBurnerEmail/data/
+                  packages/csharp/src/IsBurnerEmail/data/ \
+                  packages/kotlin/lib/src/main/resources/
           git commit -m "chore(release): v${{ steps.bumped.outputs.version }}${{ steps.decide.outputs.suffix }}"
 
       - name: Create multi-language tags
@@ -129,6 +133,7 @@ jobs:
           git tag -a "packages/go/$v"         -m "Go release $v"
           git tag -a "php/$v"                 -m "PHP release $v"
           git tag -a "csharp/$v"              -m "C# release $v"
+          git tag -a "kotlin/$v"              -m "Kotlin release $v"
 
       - name: Publish JS to npm via OIDC
         if: steps.decide.outputs.release == 'true'
@@ -169,10 +174,6 @@ jobs:
           dotnet pack src/IsBurnerEmail/IsBurnerEmail.csproj --configuration Release --output artifacts
           dotnet pack cli/Burner.Cli/Burner.Cli.csproj       --configuration Release --output artifacts
 
-      # Requests a short-lived NuGet API key via OIDC. The Trusted Publishing
-      # policy on nuget.org is pinned to this workflow file (release.yml) and
-      # owner/repo, so no long-lived secret is stored in the repo. NUGET_USER
-      # must match the nuget.org profile name that owns the policy.
       - name: NuGet login (OIDC → short-lived API key)
         if: steps.decide.outputs.release == 'true'
         id: nuget_login
@@ -188,6 +189,29 @@ jobs:
             --api-key ${{ steps.nuget_login.outputs.NUGET_API_KEY }} \
             --source https://api.nuget.org/v3/index.json \
             --skip-duplicate
+
+      - name: Set up JDK
+        if: steps.decide.outputs.release == 'true'
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Build Kotlin library
+        if: steps.decide.outputs.release == 'true'
+        working-directory: packages/kotlin
+        run: ./gradlew build --no-daemon
+        
+      - name: Publish Kotlin to Maven Central
+        if: steps.decide.outputs.release == 'true'
+        working-directory: packages/kotlin
+        env:
+          ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
+          ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+          ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_KEY }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyId: ${{ secrets.SIGNING_KEY_ID }}
+          ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_PASSWORD }}
+        run: ./gradlew :lib:publishAllPublicationsToMavenCentralRepository --no-daemon --no-configuration-cache
 
       - name: Push commit and tags
         if: steps.decide.outputs.release == 'true'

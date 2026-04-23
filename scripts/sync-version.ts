@@ -5,6 +5,7 @@
  *   - packages/py/pyproject.toml
  *   - packages/csharp/src/IsBurnerEmail/IsBurnerEmail.csproj
  *   - packages/csharp/cli/Burner.Cli/Burner.Cli.csproj
+ *   - packages/kotlin/build.gradle.kts
  *
  * Go and PHP have no version file — their versions come from git tags.
  *
@@ -61,6 +62,20 @@ function updateCsprojVersion(relPath: string, version: string): boolean {
   return true;
 }
 
+function updateKotlinBuildGradle(version: string): boolean {
+  const path = resolve(rootDir, 'packages/kotlin/build.gradle.kts');
+  const body = readFileSync(path, 'utf8');
+  // Match the top-level `version = "X.Y.Z"` line inside the allprojects block.
+  const pattern = /^(\s*version\s*=\s*)"[^"]*"/m;
+  if (!pattern.test(body)) {
+    throw new Error(`Could not find version = "..." line in ${path}`);
+  }
+  const next = body.replace(pattern, `$1"${version}"`);
+  if (next === body) return false;
+  writeFileSync(path, next);
+  return true;
+}
+
 function main(): void {
   const version = readVersion();
   console.error(`Syncing version ${version} into language packages...`);
@@ -76,6 +91,9 @@ function main(): void {
 
   const csCliChanged = updateCsprojVersion('packages/csharp/cli/Burner.Cli/Burner.Cli.csproj', version);
   console.error(`  ${csCliChanged ? '✓ updated' : '· unchanged'}  packages/csharp/cli/Burner.Cli/Burner.Cli.csproj`);
+
+  const ktChanged = updateKotlinBuildGradle(version);
+  console.error(`  ${ktChanged ? '✓ updated' : '· unchanged'}  packages/kotlin/build.gradle.kts`);
 
   console.error('\nGo and PHP have no version files — their versions come from git tags.');
 }

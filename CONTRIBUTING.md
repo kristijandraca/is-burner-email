@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for considering a contribution. This project is a monorepo that ships the same library to five language registries. Please read this page before opening a large PR.
+Thanks for considering a contribution. This project is a monorepo that ships the same library to six language registries. Please read this page before opening a large PR.
 
 ## Layout
 
@@ -12,12 +12,13 @@ Thanks for considering a contribution. This project is a monorepo that ships the
 │   ├── py/                             # PyPI package
 │   ├── go/                             # Go module
 │   ├── php/                            # Composer package
-│   └── csharp/                         # NuGet package
+│   ├── csharp/                         # NuGet package
+│   └── kotlin/                         # Maven Central package
 ├── scripts/build-lists.ts              # fetches upstream sources, rebuilds blacklist, syncs to packages
 └── .github/workflows/                  # CI + release
 ```
 
-All five packages read the same `data/` files. `build-lists.ts` syncs copies into the language packages that need local data (Go for `go:embed`, PHP for runtime reads, Python for editable installs, C# for `EmbeddedResource`).
+All six packages read the same `data/` files. `build-lists.ts` syncs copies into the language packages that need local data (Go for `go:embed`, PHP for runtime reads, Python for editable installs, C# for `EmbeddedResource`, Kotlin for JVM classpath resources).
 
 ## Quick start
 
@@ -36,6 +37,7 @@ cd packages/js      && npm install && npm test
 cd packages/py      && python -m pip install -e '.[test]' && python -m pytest
 cd packages/go      && go test ./...
 cd packages/csharp  && dotnet test
+cd packages/kotlin  && ./gradlew test
 composer install && composer test  # composer.json lives at the repo root (Packagist requirement)
 ```
 
@@ -141,11 +143,12 @@ If you're releasing, not contributing: the mechanics live in [`.github/workflows
 | Registry | State |
 |---|---|
 | npm (JS) | ✅ automated via OIDC + Trusted Publishing |
-| PyPI (Python) | ❌ not wired yet — first manual publish + trusted publisher registration needed |
+| PyPI (Python) | ✅ automated via OIDC + Trusted Publishing |
 | Go | ⚠️ no-op publish — the `packages/go/vX.Y.Z` tag *is* the release; `go get @vX.Y.Z` works once pushed |
-| Packagist (PHP) | ❌ not wired yet — register repo on Packagist + enable GitHub webhook |
+| Packagist (PHP) | ✅ automated via GitHub webhook (Packagist pulls on tag push) |
 | NuGet (C#) | ✅ automated via OIDC + Trusted Publishing (requires `NUGET_USER` repo secret with the nuget.org profile name) |
+| Maven Central (Kotlin) | ✅ automated via `vanniktech/gradle-maven-publish-plugin` (requires `MAVEN_CENTRAL_USERNAME`, `MAVEN_CENTRAL_PASSWORD`, `SIGNING_KEY`, `SIGNING_KEY_ID`, `SIGNING_PASSWORD` repo secrets) |
 
-Setup steps for wiring PyPI and Packagist live as TODO comments next to their stubs in [`release.yml`](./.github/workflows/release.yml) — search for `TODO:` in that file.
+Setup notes for the one remaining registry (Maven Central / Kotlin) live as a `TODO:` comment next to its build step in [`release.yml`](./.github/workflows/release.yml).
 
 **Out-of-band release** (rare, usually wrong): edit `VERSION`, run `npm run version:sync`, commit, tag, push. The workflow will no-op on the next cron since data already matches.
