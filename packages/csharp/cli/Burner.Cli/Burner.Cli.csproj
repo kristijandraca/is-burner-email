@@ -12,7 +12,7 @@
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>burner</ToolCommandName>
     <PackageId>Kristijandraca.IsBurnerEmail.Cli</PackageId>
-    <Version>1.2.0</Version>
+    <Version>1.3.0</Version>
     <Authors>kristijandraca</Authors>
     <Description>CLI for Kristijandraca.IsBurnerEmail — burner / disposable email detection.</Description>
     <PackageTags>email;burner;disposable;temporary;validator;offline;cli</PackageTags>
