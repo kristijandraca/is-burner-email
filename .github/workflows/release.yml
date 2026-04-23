@@ -110,11 +110,13 @@ jobs:
         if: steps.decide.outputs.release == 'true'
         run: |
           git add VERSION \
+                  README.md \
                   packages/js/package.json \
                   packages/py/pyproject.toml \
                   packages/csharp/src/IsBurnerEmail/IsBurnerEmail.csproj \
                   packages/csharp/cli/Burner.Cli/Burner.Cli.csproj \
                   packages/kotlin/build.gradle.kts \
+                  packages/kotlin/README.md \
                   data/ \
                   packages/go/data/ \
                   packages/php/data/ \

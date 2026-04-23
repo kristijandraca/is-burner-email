@@ -7,6 +7,11 @@
  *   - packages/csharp/cli/Burner.Cli/Burner.Cli.csproj
  *   - packages/kotlin/build.gradle.kts
  *
+ * Also rewrites any hardcoded Maven coordinate `io.github.kristijandraca:
+ * is-burner-email:X.Y.Z` in README.md and packages/kotlin/README.md — those
+ * are the only places across all package READMEs where a version appears
+ * in an install snippet (Gradle syntax requires it literal).
+ *
  * Go and PHP have no version file — their versions come from git tags.
  *
  * Run with: npx tsx scripts/sync-version.ts
@@ -76,6 +81,19 @@ function updateKotlinBuildGradle(version: string): boolean {
   return true;
 }
 
+function updateMavenCoordinateInFile(relPath: string, version: string): boolean {
+  const path = resolve(rootDir, relPath);
+  const body = readFileSync(path, 'utf8');
+  const pattern = /io\.github\.kristijandraca:is-burner-email:\d+\.\d+\.\d+/g;
+  if (!pattern.test(body)) {
+    throw new Error(`Could not find Maven coordinate string in ${path}`);
+  }
+  const next = body.replace(pattern, `io.github.kristijandraca:is-burner-email:${version}`);
+  if (next === body) return false;
+  writeFileSync(path, next);
+  return true;
+}
+
 function main(): void {
   const version = readVersion();
   console.error(`Syncing version ${version} into language packages...`);
@@ -94,6 +112,12 @@ function main(): void {
 
   const ktChanged = updateKotlinBuildGradle(version);
   console.error(`  ${ktChanged ? '✓ updated' : '· unchanged'}  packages/kotlin/build.gradle.kts`);
+
+  const rootReadmeChanged = updateMavenCoordinateInFile('README.md', version);
+  console.error(`  ${rootReadmeChanged ? '✓ updated' : '· unchanged'}  README.md (Maven coord)`);
+
+  const ktReadmeChanged = updateMavenCoordinateInFile('packages/kotlin/README.md', version);
+  console.error(`  ${ktReadmeChanged ? '✓ updated' : '· unchanged'}  packages/kotlin/README.md (Maven coord)`);
 
   console.error('\nGo and PHP have no version files — their versions come from git tags.');
 }
