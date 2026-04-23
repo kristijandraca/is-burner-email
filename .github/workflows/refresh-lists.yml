@@ -1,0 +1,87 @@
+name: Refresh disposable domain lists
+
+# Rebuilds the disposable-email lists from upstream sources and opens (or
+# updates) a PR on the `data/refresh` branch. No publishing happens here —
+# the maintainer reviews the diff, merges the PR, and then manually runs
+# the Release workflow (workflow_dispatch) to cut a new version.
+#
+# This is the supply-chain gate: by design, no data change reaches published
+# packages without a human approving it in a pull request.
+#
+# Behavior:
+#   - schedule: weekly refresh
+#   - workflow_dispatch: manual trigger for testing
+#   - If no data changes → exit silently
+#   - If changes → open/update PR; label `high-churn` if diff looks anomalous
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+concurrency:
+  group: refresh-lists
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Install root tooling
+        run: npm ci
+
+      - name: Install JS package deps
+        working-directory: packages/js
+        run: npm ci
+
+      - name: Rebuild lists from upstream sources
+        env:
+          SUMMARY_DIR: ${{ runner.temp }}/refresh
+        run: npm run build:lists
+
+      - name: Detect data changes
+        id: data
+        run: |
+          if git diff --quiet data/ packages/go/data/ packages/php/data/ packages/py/src/is_burner_email/data/ packages/csharp/src/IsBurnerEmail/data/ packages/kotlin/lib/src/main/resources/; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No data changes this run — nothing to open a PR for."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "Data changes detected — preparing PR."
+          fi
+
+      - name: Compute PR labels
+        if: steps.data.outputs.changed == 'true'
+        id: labels
+        env:
+          SUMMARY_JSON: ${{ runner.temp }}/refresh/refresh-summary.json
+        run: |
+          churn=$(jq -r .churnLevel "$SUMMARY_JSON")
+          {
+            echo "labels<<EOF"
+            echo "data-refresh"
+            if [ "$churn" = "high" ]; then echo "high-churn"; fi
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+          echo "Churn level: $churn"
+
+      - name: Open or update data-refresh PR
+        if: steps.data.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: data/refresh
+          delete-branch: true
+          commit-message: 'chore(data): refresh disposable domain lists'
+          title: 'chore(data): refresh disposable domain lists'
+          body-path: ${{ runner.temp }}/refresh/refresh-summary.md
+          labels: ${{ steps.labels.outputs.labels }}

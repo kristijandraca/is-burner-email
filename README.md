@@ -25,7 +25,7 @@ Every package ships the same bundled domain data and exposes the same API shape.
   - `graylist` — email alias / forwarding services (SimpleLogin, DuckDuckGo, Firefox Relay); blocked only in strict mode
 - **Two modes.** `normal` (blacklist only) or `strict` (blacklist + graylist)
 - **CLI in every language** — `burner <email>` with the same flags and exit codes
-- **Auto-updated weekly** — a cron refreshes the aggregated blacklist from upstream sources and publishes a patch version when anything changed
+- **Refreshed weekly, reviewed before release** — a cron rebuilds the aggregated blacklist from upstream sources and opens a PR with the diff; a maintainer reviews and merges it, then cuts a patch release. No upstream change reaches a published package unattended.
 
 ## Data model
 

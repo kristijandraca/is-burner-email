@@ -1,6 +1,6 @@
 name: Release
 
-# Coordinated release across all four language packages. One shared version
+# Coordinated release across all six language packages. One shared version
 # lives in /VERSION and is mirrored into each package file. Tags are pushed
 # per-language so every registry picks up its own trigger.
 #
@@ -8,13 +8,11 @@ name: Release
 # Go is tag-driven — pushing packages/go/vX.Y.Z below is the release.
 # PHP: see the Packagist TODO below — needs a one-time webhook registration.
 #
-# Behavior:
-#   - schedule: rebuild lists, release a patch across all languages if data changed
-#   - workflow_dispatch: always release with the chosen bump
+# Data refresh is a separate workflow (refresh-lists.yml) that opens a PR.
+# Once that PR is merged, a maintainer runs this workflow manually with the
+# chosen bump type. Nothing publishes without a human in the loop.
 
 on:
-  schedule:
-    - cron: '0 6 * * 1'
   workflow_dispatch:
     inputs:
       bump:
@@ -52,48 +50,14 @@ jobs:
         working-directory: packages/js
         run: npm ci
 
-      - name: Rebuild lists from upstream sources
-        run: npm run build:lists
-
-      - name: Detect data changes
-        id: data
-        run: |
-          if git diff --quiet data/ packages/go/data/ packages/php/data/ packages/py/src/is_burner_email/data/ packages/csharp/src/IsBurnerEmail/data/ packages/kotlin/lib/src/main/resources/; then
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-            echo "No data changes detected."
-          else
-            echo "changed=true" >> "$GITHUB_OUTPUT"
-            echo "Data changes detected."
-          fi
-
-      - name: Decide release parameters
-        id: decide
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "release=true" >> "$GITHUB_OUTPUT"
-            echo "bump=${{ inputs.bump }}" >> "$GITHUB_OUTPUT"
-            echo "suffix=" >> "$GITHUB_OUTPUT"
-            echo "Manual dispatch — will release with ${{ inputs.bump }} bump."
-          elif [ "${{ steps.data.outputs.changed }}" = "true" ]; then
-            echo "release=true" >> "$GITHUB_OUTPUT"
-            echo "bump=patch" >> "$GITHUB_OUTPUT"
-            echo "suffix= — refresh disposable domain lists" >> "$GITHUB_OUTPUT"
-            echo "Cron with data changes — will release patch."
-          else
-            echo "release=false" >> "$GITHUB_OUTPUT"
-            echo "Cron with no data changes — nothing to release."
-          fi
-
       - name: Bump shared version and sync into packages
-        if: steps.decide.outputs.release == 'true'
         id: bumped
         run: |
-          new_version=$(npx tsx scripts/bump-version.ts ${{ steps.decide.outputs.bump }})
+          new_version=$(npx tsx scripts/bump-version.ts ${{ inputs.bump }})
           echo "version=$new_version" >> "$GITHUB_OUTPUT"
           echo "New version: $new_version"
 
       - name: Typecheck, test, build (JS)
-        if: steps.decide.outputs.release == 'true'
         working-directory: packages/js
         run: |
           npm run typecheck
@@ -101,13 +65,11 @@ jobs:
           npm run build
 
       - name: Configure git identity
-        if: steps.decide.outputs.release == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-      - name: Commit version bump and any data changes
-        if: steps.decide.outputs.release == 'true'
+      - name: Commit version bump
         run: |
           git add VERSION \
                   README.md \
@@ -116,17 +78,10 @@ jobs:
                   packages/csharp/src/IsBurnerEmail/IsBurnerEmail.csproj \
                   packages/csharp/cli/Burner.Cli/Burner.Cli.csproj \
                   packages/kotlin/build.gradle.kts \
-                  packages/kotlin/README.md \
-                  data/ \
-                  packages/go/data/ \
-                  packages/php/data/ \
-                  packages/py/src/is_burner_email/data/ \
-                  packages/csharp/src/IsBurnerEmail/data/ \
-                  packages/kotlin/lib/src/main/resources/
-          git commit -m "chore(release): v${{ steps.bumped.outputs.version }}${{ steps.decide.outputs.suffix }}"
+                  packages/kotlin/README.md
+          git commit -m "chore(release): v${{ steps.bumped.outputs.version }}"
 
       - name: Create multi-language tags
-        if: steps.decide.outputs.release == 'true'
         run: |
           v='v${{ steps.bumped.outputs.version }}'
           git tag -a "$v"                     -m "Release $v"
@@ -138,18 +93,15 @@ jobs:
           git tag -a "kotlin/$v"              -m "Kotlin release $v"
 
       - name: Publish JS to npm via OIDC
-        if: steps.decide.outputs.release == 'true'
         working-directory: packages/js
         run: npm publish --access public --provenance
 
       - name: Set up Python
-        if: steps.decide.outputs.release == 'true'
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
 
       - name: Build Python package
-        if: steps.decide.outputs.release == 'true'
         working-directory: packages/py
         run: |
           rm -rf dist
@@ -157,19 +109,16 @@ jobs:
           python -m build
 
       - name: Publish Python to PyPI via OIDC
-        if: steps.decide.outputs.release == 'true'
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: packages/py/dist
 
       - name: Set up .NET
-        if: steps.decide.outputs.release == 'true'
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
 
       - name: Pack C# library and CLI tool
-        if: steps.decide.outputs.release == 'true'
         working-directory: packages/csharp
         run: |
           rm -rf artifacts
@@ -177,14 +126,12 @@ jobs:
           dotnet pack cli/Burner.Cli/Burner.Cli.csproj       --configuration Release --output artifacts
 
       - name: NuGet login (OIDC → short-lived API key)
-        if: steps.decide.outputs.release == 'true'
         id: nuget_login
         uses: NuGet/login@v1
         with:
           user: ${{ secrets.NUGET_USER }}
 
       - name: Publish to NuGet
-        if: steps.decide.outputs.release == 'true'
         working-directory: packages/csharp
         run: |
           dotnet nuget push "artifacts/*.nupkg" \
@@ -193,19 +140,16 @@ jobs:
             --skip-duplicate
 
       - name: Set up JDK
-        if: steps.decide.outputs.release == 'true'
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
 
       - name: Build Kotlin library
-        if: steps.decide.outputs.release == 'true'
         working-directory: packages/kotlin
         run: ./gradlew build --no-daemon
-        
+
       - name: Publish Kotlin to Maven Central
-        if: steps.decide.outputs.release == 'true'
         working-directory: packages/kotlin
         env:
           ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
@@ -216,5 +160,4 @@ jobs:
         run: ./gradlew :lib:publishAllPublicationsToMavenCentralRepository --no-daemon --no-configuration-cache
 
       - name: Push commit and tags
-        if: steps.decide.outputs.release == 'true'
         run: git push --follow-tags

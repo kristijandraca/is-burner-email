@@ -132,11 +132,19 @@ No strict enforcement — readable beats rigid.
 
 ## Maintainer notes
 
-If you're releasing, not contributing: the mechanics live in [`.github/workflows/release.yml`](./.github/workflows/release.yml). A few things worth knowing up front.
+If you're releasing, not contributing: two workflows are involved.
 
-**One version, one truth.** `VERSION` at the repo root is the single source. `scripts/bump-version.ts` propagates it into `packages/js/package.json` and `packages/py/pyproject.toml`. Go and PHP have no version files — they take their version from git tags.
+- [`.github/workflows/refresh-lists.yml`](./.github/workflows/refresh-lists.yml) runs weekly (and on manual dispatch). It rebuilds the blacklist from upstream sources and, if the data changed, opens or updates a PR on the `data/refresh` branch. No publish happens here — this is the supply-chain gate.
+- [`.github/workflows/release.yml`](./.github/workflows/release.yml) is manual-only (`workflow_dispatch`). It bumps the shared version, builds, and publishes to all six registries.
 
-**All four languages advance together.** Patch releases fire weekly when upstream data changes; manual dispatches bump everything at the chosen level. There is no "JS hotfix without a Python bump" path. If you think you need one, reconsider — version drift across languages is exactly what the model avoids.
+**Typical release flow:**
+1. Monday cron opens/updates the `data/refresh` PR. Review the churn summary in the PR description (added / removed counts, per-source counts, `high-churn` label if anomalous).
+2. Merge the PR. This moves the refreshed data onto `main` but publishes nothing.
+3. Go to Actions → Release → Run workflow → pick `patch` (or `minor`/`major`) → run.
+
+**One version, one truth.** `VERSION` at the repo root is the single source. `scripts/sync-version.ts` propagates it into every package manifest and the Gradle coordinate snippets in READMEs. Go and PHP have no version files — they take their version from git tags.
+
+**All six languages advance together.** Every release bumps everything. There is no "JS hotfix without a Python bump" path. If you think you need one, reconsider — version drift across languages is exactly what the model avoids.
 
 **Per-registry status:**
 
@@ -151,4 +159,4 @@ If you're releasing, not contributing: the mechanics live in [`.github/workflows
 
 Setup notes for the one remaining registry (Maven Central / Kotlin) live as a `TODO:` comment next to its build step in [`release.yml`](./.github/workflows/release.yml).
 
-**Out-of-band release** (rare, usually wrong): edit `VERSION`, run `npm run version:sync`, commit, tag, push. The workflow will no-op on the next cron since data already matches.
+**Out-of-band release** (rare, usually wrong): edit `VERSION`, run `npm run version:sync`, commit, tag, push. Use the Release workflow's manual dispatch unless you have a specific reason not to.

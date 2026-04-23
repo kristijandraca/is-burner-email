@@ -6,7 +6,7 @@ Fast, offline detection of burner / disposable emails.
 - **Zero runtime dependencies.**
 - **Three lists.** `blacklist` (burners), `whitelist` (always allowed), `graylist` (email alias / forwarding services — blocked only in strict mode).
 - **TypeScript.** Ships ESM + CJS + types. Node 20+.
-- **Auto-updated weekly** via GitHub Actions, aggregating multiple upstream sources.
+- **Refreshed weekly, reviewed before release** — a cron aggregates multiple upstream sources and opens a PR; every published update passes through a maintainer review.
 
 ## Install
 
