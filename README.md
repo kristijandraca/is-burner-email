@@ -11,7 +11,7 @@ Fast, offline burner / disposable email detection. Same three-list model (`black
 | **Go** | go.dev | `go get github.com/kristijandraca/is-burner-email/packages/go` | [`packages/go/`](./packages/go) |
 | **PHP** | [Packagist](https://packagist.org/packages/kristijandraca/is-burner-email) | `composer require kristijandraca/is-burner-email` | [`packages/php/`](./packages/php) |
 | **C# / .NET** | [NuGet](https://www.nuget.org/packages/Kristijandraca.IsBurnerEmail) | `dotnet add package Kristijandraca.IsBurnerEmail` | [`packages/csharp/`](./packages/csharp) |
-| **Kotlin / JVM** | [Maven Central](https://central.sonatype.com/artifact/io.github.kristijandraca/is-burner-email) | `implementation("io.github.kristijandraca:is-burner-email:1.3.0")` | [`packages/kotlin/`](./packages/kotlin) |
+| **Kotlin / JVM** | [Maven Central](https://central.sonatype.com/artifact/io.github.kristijandraca/is-burner-email) | `implementation("io.github.kristijandraca:is-burner-email:1.3.1")` | [`packages/kotlin/`](./packages/kotlin) |
 
 Every package ships the same bundled domain data and exposes the same API shape.
 
