@@ -12,7 +12,7 @@ Fast, offline detection of burner / disposable emails.
 ```kotlin
 // build.gradle.kts
 dependencies {
-    implementation("io.github.kristijandraca:is-burner-email:1.3.3")
+    implementation("io.github.kristijandraca:is-burner-email:1.3.4")
 }
 ```
 
