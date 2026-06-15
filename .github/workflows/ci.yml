@@ -121,3 +121,20 @@ jobs:
       - name: Build CLI distribution
         working-directory: packages/kotlin
         run: ./gradlew :cli:installDist --no-daemon
+
+  test-rust:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rust: ['1.70', 'stable']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.rust }}
+      - name: Test
+        working-directory: packages/rust
+        run: cargo test
+      - name: Build CLI
+        working-directory: packages/rust
+        run: cargo build --release --bin burner
