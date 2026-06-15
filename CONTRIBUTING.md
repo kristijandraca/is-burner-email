@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for considering a contribution. This project is a monorepo that ships the same library to six language registries. Please read this page before opening a large PR.
+Thanks for considering a contribution. This project is a monorepo that ships the same library to seven language registries. Please read this page before opening a large PR.
 
 ## Layout
 
@@ -13,12 +13,13 @@ Thanks for considering a contribution. This project is a monorepo that ships the
 │   ├── go/                             # Go module
 │   ├── php/                            # Composer package
 │   ├── csharp/                         # NuGet package
-│   └── kotlin/                         # Maven Central package
+│   ├── kotlin/                         # Maven Central package
+│   └── rust/                           # crates.io package
 ├── scripts/build-lists.ts              # fetches upstream sources, rebuilds blacklist, syncs to packages
 └── .github/workflows/                  # CI + release
 ```
 
-All six packages read the same `data/` files. `build-lists.ts` syncs copies into the language packages that need local data (Go for `go:embed`, PHP for runtime reads, Python for editable installs, C# for `EmbeddedResource`, Kotlin for JVM classpath resources).
+All seven packages read the same `data/` files. `build-lists.ts` syncs copies into the language packages that need local data (Go for `go:embed`, PHP for runtime reads, Python for editable installs, C# for `EmbeddedResource`, Kotlin for JVM classpath resources, Rust for `include_str!`).
 
 ## Quick start
 
@@ -36,6 +37,7 @@ npm run build:lists
 cd packages/js      && npm install && npm test
 cd packages/py      && python -m pip install -e '.[test]' && python -m pytest
 cd packages/go      && go test ./...
+cd packages/rust    && cargo test
 cd packages/csharp  && dotnet test
 cd packages/kotlin  && ./gradlew test
 composer install && composer test  # composer.json lives at the repo root (Packagist requirement)
@@ -115,7 +117,7 @@ You do **not** need to open a PR for list changes. Open an issue with the **Fals
 - Tests must pass in every language you touched
 - Do **not** commit `packages/js/dist/`, `packages/php/vendor/`, `packages/py/.pytest_cache/`, `__pycache__/`, or similar build artifacts
 - Do **not** hand-edit `data/blacklist.txt` — it's auto-generated
-- Do **not** hand-edit `version` fields in `packages/js/package.json` or `packages/py/pyproject.toml` — all four packages share a single version. See the [maintainer notes](#maintainer-notes) below.
+- Do **not** hand-edit `version` fields in `packages/js/package.json` or `packages/py/pyproject.toml` — every package shares a single version. See the [maintainer notes](#maintainer-notes) below.
 
 ## Commit style
 
@@ -135,7 +137,7 @@ No strict enforcement — readable beats rigid.
 If you're releasing, not contributing: two workflows are involved.
 
 - [`.github/workflows/refresh-lists.yml`](./.github/workflows/refresh-lists.yml) runs weekly (and on manual dispatch). It rebuilds the blacklist from upstream sources and, if the data changed, opens or updates a PR on the `data/refresh` branch. No publish happens here — this is the supply-chain gate.
-- [`.github/workflows/release.yml`](./.github/workflows/release.yml) is manual-only (`workflow_dispatch`). It bumps the shared version, builds, and publishes to all six registries.
+- [`.github/workflows/release.yml`](./.github/workflows/release.yml) is manual-only (`workflow_dispatch`). It bumps the shared version, builds, and publishes to all seven registries.
 
 **Typical release flow:**
 1. Monday cron opens/updates the `data/refresh` PR. Review the churn summary in the PR description (added / removed counts, per-source counts, `high-churn` label if anomalous).
@@ -144,7 +146,7 @@ If you're releasing, not contributing: two workflows are involved.
 
 **One version, one truth.** `VERSION` at the repo root is the single source. `scripts/sync-version.ts` propagates it into every package manifest and the Gradle coordinate snippets in READMEs. Go and PHP have no version files — they take their version from git tags.
 
-**All six languages advance together.** Every release bumps everything. There is no "JS hotfix without a Python bump" path. If you think you need one, reconsider — version drift across languages is exactly what the model avoids.
+**All seven languages advance together.** Every release bumps everything. There is no "JS hotfix without a Python bump" path. If you think you need one, reconsider — version drift across languages is exactly what the model avoids.
 
 **Per-registry status:**
 
@@ -156,7 +158,8 @@ If you're releasing, not contributing: two workflows are involved.
 | Packagist (PHP) | ✅ automated via GitHub webhook (Packagist pulls on tag push) |
 | NuGet (C#) | ✅ automated via OIDC + Trusted Publishing (requires `NUGET_USER` repo secret with the nuget.org profile name) |
 | Maven Central (Kotlin) | ✅ automated via `vanniktech/gradle-maven-publish-plugin` (requires `MAVEN_CENTRAL_USERNAME`, `MAVEN_CENTRAL_PASSWORD`, `SIGNING_KEY`, `SIGNING_KEY_ID`, `SIGNING_PASSWORD` repo secrets) |
+| crates.io (Rust) | ✅ automated via OIDC Trusted Publishing (`rust-lang/crates-io-auth-action`). One-time setup: the crate must exist (first publish manual with an API token), then add a GitHub Actions Trusted Publisher on crates.io pointing at this repo + `release.yml` |
 
-Setup notes for the one remaining registry (Maven Central / Kotlin) live as a `TODO:` comment next to its build step in [`release.yml`](./.github/workflows/release.yml).
+Setup notes for Maven Central / Kotlin live as a `TODO:` comment next to its build step in [`release.yml`](./.github/workflows/release.yml).
 
 **Out-of-band release** (rare, usually wrong): edit `VERSION`, run `npm run version:sync`, commit, tag, push. Use the Release workflow's manual dispatch unless you have a specific reason not to.
