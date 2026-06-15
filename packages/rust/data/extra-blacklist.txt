@@ -1,0 +1,25 @@
+# Extra blacklist — manually-curated burner / disposable domains.
+# Merged with upstream sources during `npm run build:lists`.
+# Whitelist still overrides — if a legit domain accidentally ends up here,
+# the whitelist will neutralize it.
+#
+# Format: one domain per line. Blank lines and lines starting with # are ignored.
+
+# dark2web.com (disposable / burner service — rotating alias domains)
+accommodate.top
+atlant.link
+cfo.futbol
+competition.tel
+creditka.fans
+dark2web.art
+demand.pictures
+diversify.re
+grand-me.club
+lary-lcc.click
+lcc-company.one
+lican.in
+ligue-games.art
+ministre.rocks
+miranda.pictures
+start-up.observer
+wery-well.net

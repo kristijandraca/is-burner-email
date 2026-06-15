@@ -1,0 +1,26 @@
+[package]
+name = "is-burner-email"
+version = "1.3.8"
+edition = "2021"
+rust-version = "1.70"
+description = "Fast, offline burner / disposable email detection."
+license = "MIT"
+repository = "https://github.com/kristijandraca/is-burner-email"
+homepage = "https://github.com/kristijandraca/is-burner-email"
+readme = "README.md"
+keywords = ["email", "disposable", "burner", "validation", "spam"]
+categories = ["email"]
+# Ship only what the crate needs; keep extra-blacklist.txt out of the tarball
+# (it is a build input, not embedded — mirrors Go/Kotlin excluding it).
+include = [
+    "src/**/*.rs",
+    "data/blacklist.txt",
+    "data/whitelist.txt",
+    "data/graylist.txt",
+    "README.md",
+    "LICENSE",
+]
+
+[[bin]]
+name = "burner"
+path = "src/bin/burner.rs"

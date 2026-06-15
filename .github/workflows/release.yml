@@ -1,6 +1,6 @@
 name: Release
 
-# Coordinated release across all six language packages. One shared version
+# Coordinated release across all seven language packages. One shared version
 # lives in /VERSION and is mirrored into each package file. Tags are pushed
 # per-language so every registry picks up its own trigger.
 #
@@ -78,7 +78,8 @@ jobs:
                   packages/csharp/src/IsBurnerEmail/IsBurnerEmail.csproj \
                   packages/csharp/cli/Burner.Cli/Burner.Cli.csproj \
                   packages/kotlin/build.gradle.kts \
-                  packages/kotlin/README.md
+                  packages/kotlin/README.md \
+                  packages/rust/Cargo.toml
           git commit -m "chore(release): v${{ steps.bumped.outputs.version }}"
 
       - name: Create multi-language tags
@@ -91,6 +92,7 @@ jobs:
           git tag -a "php/$v"                 -m "PHP release $v"
           git tag -a "csharp/$v"              -m "C# release $v"
           git tag -a "kotlin/$v"              -m "Kotlin release $v"
+          git tag -a "rust/$v"                -m "Rust release $v"
 
       - name: Publish JS to npm via OIDC
         working-directory: packages/js
@@ -158,6 +160,19 @@ jobs:
           ORG_GRADLE_PROJECT_signingInMemoryKeyId: ${{ secrets.SIGNING_KEY_ID }}
           ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_PASSWORD }}
         run: ./gradlew :lib:publishAllPublicationsToMavenCentralRepository --no-daemon --no-configuration-cache
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Authenticate to crates.io (OIDC)
+        id: crates_auth
+        uses: rust-lang/crates-io-auth-action@v1
+
+      - name: Publish Rust to crates.io
+        working-directory: packages/rust
+        run: cargo publish
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ steps.crates_auth.outputs.token }}
 
       - name: Push commit and tags
         run: git push --follow-tags

@@ -124,6 +124,7 @@ function readTxtList(path: string): string[] {
 //     hatchling's force-include, which doesn't need this copy)
 //   - C#: EmbeddedResource requires files under the csproj dir
 //   - Kotlin: JVM classpath resources must live under src/main/resources
+//   - Rust: include_str! embeds files relative to the crate dir
 // The JS package reads root data/ directly via tsup's text loader.
 const SYNC_TARGETS = [
   resolve(rootDir, 'packages/go/data'),
@@ -131,6 +132,7 @@ const SYNC_TARGETS = [
   resolve(rootDir, 'packages/py/src/is_burner_email/data'),
   resolve(rootDir, 'packages/csharp/src/IsBurnerEmail/data'),
   resolve(rootDir, 'packages/kotlin/lib/src/main/resources'),
+  resolve(rootDir, 'packages/rust/data'),
 ];
 
 function syncDataDir(): void {

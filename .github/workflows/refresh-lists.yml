@@ -51,7 +51,7 @@ jobs:
       - name: Detect data changes
         id: data
         run: |
-          if git diff --quiet data/ packages/go/data/ packages/php/data/ packages/py/src/is_burner_email/data/ packages/csharp/src/IsBurnerEmail/data/ packages/kotlin/lib/src/main/resources/; then
+          if git diff --quiet data/ packages/go/data/ packages/php/data/ packages/py/src/is_burner_email/data/ packages/csharp/src/IsBurnerEmail/data/ packages/kotlin/lib/src/main/resources/ packages/rust/data/; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
             echo "No data changes this run — nothing to open a PR for."
           else
