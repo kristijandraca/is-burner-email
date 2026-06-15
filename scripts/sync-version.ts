@@ -6,6 +6,7 @@
  *   - packages/csharp/src/IsBurnerEmail/IsBurnerEmail.csproj
  *   - packages/csharp/cli/Burner.Cli/Burner.Cli.csproj
  *   - packages/kotlin/build.gradle.kts
+ *   - packages/rust/Cargo.toml
  *
  * Also rewrites any hardcoded Maven coordinate `io.github.kristijandraca:
  * is-burner-email:X.Y.Z` in README.md and packages/kotlin/README.md — those
@@ -81,6 +82,21 @@ function updateKotlinBuildGradle(version: string): boolean {
   return true;
 }
 
+function updateRustCargoToml(version: string): boolean {
+  const path = resolve(rootDir, 'packages/rust/Cargo.toml');
+  const body = readFileSync(path, 'utf8');
+  // Match the top-level `version = "X.Y.Z"` under [package]. The `name` and
+  // `rust-version` lines don't match this anchored, exact-key pattern.
+  const pattern = /^(version\s*=\s*)"[^"]*"/m;
+  if (!pattern.test(body)) {
+    throw new Error(`Could not find version = "..." line in ${path}`);
+  }
+  const next = body.replace(pattern, `$1"${version}"`);
+  if (next === body) return false;
+  writeFileSync(path, next);
+  return true;
+}
+
 function updateMavenCoordinateInFile(relPath: string, version: string): boolean {
   const path = resolve(rootDir, relPath);
   const body = readFileSync(path, 'utf8');
@@ -112,6 +128,9 @@ function main(): void {
 
   const ktChanged = updateKotlinBuildGradle(version);
   console.error(`  ${ktChanged ? '✓ updated' : '· unchanged'}  packages/kotlin/build.gradle.kts`);
+
+  const rsChanged = updateRustCargoToml(version);
+  console.error(`  ${rsChanged ? '✓ updated' : '· unchanged'}  packages/rust/Cargo.toml`);
 
   const rootReadmeChanged = updateMavenCoordinateInFile('README.md', version);
   console.error(`  ${rootReadmeChanged ? '✓ updated' : '· unchanged'}  README.md (Maven coord)`);

@@ -23,6 +23,11 @@ composer.lock
 *.test
 *.out
 
+# Rust
+target
+# Zero runtime deps — the lockfile only pins the crate itself, so it adds no value.
+packages/rust/Cargo.lock
+
 # OS + editors + secrets
 .DS_Store
 Thumbs.db

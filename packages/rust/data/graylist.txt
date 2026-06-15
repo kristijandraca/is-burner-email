@@ -1,0 +1,27 @@
+# Graylist — email alias / forwarding services.
+# Blocked only in strict mode. These services let users mint unlimited
+# revocable aliases, so they're functionally disposable without being scam-tier.
+#
+# Format: one domain per line. Blank lines and lines starting with # are ignored.
+
+# SimpleLogin (Proton)
+simplelogin.com
+silomails.com
+slmails.com
+simplelogin.fr
+aleeas.com
+slmail.me
+8shield.net
+dralias.com
+passinbox.com
+passfwd.com
+passmail.com
+passmail.net
+simplelogin.co
+simplelogin.io
+
+# DuckDuckGo Email Protection
+duck.com
+
+# Firefox Relay (Mozilla)
+mozmail.com
