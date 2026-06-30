@@ -9,7 +9,7 @@
     <AssemblyName>Kristijandraca.IsBurnerEmail</AssemblyName>
 
     <PackageId>Kristijandraca.IsBurnerEmail</PackageId>
-    <Version>1.4.1</Version>
+    <Version>1.4.2</Version>
     <Authors>kristijandraca</Authors>
     <Description>Fast, offline burner / disposable email detection with three-list (blacklist/whitelist/graylist) classification.</Description>
     <PackageTags>email;burner;disposable;temporary;validator;offline</PackageTags>
