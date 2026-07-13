@@ -1,6 +1,6 @@
 [package]
 name = "is-burner-email"
-version = "1.4.2"
+version = "1.4.3"
 edition = "2021"
 rust-version = "1.70"
 description = "Fast, offline burner / disposable email detection."
