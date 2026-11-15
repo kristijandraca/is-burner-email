@@ -8,6 +8,11 @@ name: Release
 # Go is tag-driven — pushing packages/go/vX.Y.Z below is the release.
 # PHP: see the Packagist TODO below — needs a one-time webhook registration.
 #
+# Every publish step is idempotent: if a registry already has this version it
+# is skipped. The version-bump commit and tags are pushed only at the very end,
+# so if any step fails, nothing is pushed and re-running the workflow recomputes
+# the same version and resumes where it left off.
+#
 # Data refresh is a separate workflow (refresh-lists.yml) that opens a PR.
 # Once that PR is merged, a maintainer runs this workflow manually with the
 # chosen bump type. Nothing publishes without a human in the loop.
@@ -36,9 +41,9 @@ jobs:
       contents: write
       id-token: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: '24'
           registry-url: 'https://registry.npmjs.org'
@@ -96,10 +101,16 @@ jobs:
 
       - name: Publish JS to npm via OIDC
         working-directory: packages/js
-        run: npm publish --access public --provenance
+        run: |
+          v='${{ steps.bumped.outputs.version }}'
+          if npm view "is-burner-email@$v" version >/dev/null 2>&1; then
+            echo "::warning::is-burner-email@$v is already on npm (from an earlier partial release) - skipping"
+          else
+            npm publish --access public --provenance
+          fi
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.12'
 
@@ -114,9 +125,10 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: packages/py/dist
+          skip-existing: true
 
       - name: Set up .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: '8.0.x'
 
@@ -142,7 +154,7 @@ jobs:
             --skip-duplicate
 
       - name: Set up JDK
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
@@ -151,7 +163,20 @@ jobs:
         working-directory: packages/kotlin
         run: ./gradlew build --no-daemon
 
+      - name: Check whether Kotlin version is already on Maven Central
+        id: maven_exists
+        run: |
+          v='${{ steps.bumped.outputs.version }}'
+          url="https://repo1.maven.org/maven2/io/github/kristijandraca/is-burner-email/$v/is-burner-email-$v.pom"
+          if curl -sfIL "$url" >/dev/null; then
+            echo "::warning::io.github.kristijandraca:is-burner-email:$v is already on Maven Central - skipping"
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Publish Kotlin to Maven Central
+        if: steps.maven_exists.outputs.exists != 'true'
         working-directory: packages/kotlin
         env:
           ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
@@ -170,7 +195,13 @@ jobs:
 
       - name: Publish Rust to crates.io
         working-directory: packages/rust
-        run: cargo publish
+        run: |
+          v='${{ steps.bumped.outputs.version }}'
+          if curl -sf -A 'is-burner-email-release (github actions)'                "https://crates.io/api/v1/crates/is-burner-email/$v" >/dev/null; then
+            echo "::warning::is-burner-email $v is already on crates.io - skipping"
+          else
+            cargo publish
+          fi
         env:
           CARGO_REGISTRY_TOKEN: ${{ steps.crates_auth.outputs.token }}
 
